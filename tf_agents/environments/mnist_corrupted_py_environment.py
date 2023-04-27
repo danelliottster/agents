@@ -59,6 +59,10 @@ class MnistCorrupted ( py_environment.PyEnvironment ) :
     def __init__( self , classifier , max_duration = 50 , selected_corruptions=["translation"] ) :
         """ Initialize the environment
         
+        TODO:
+            - modify reward function to penalize actions which do not improve the classification
+            - add more corruptions
+            - pad the image with zeros?
         Args:
             reward_fn: a function which takes a MxM image numpy array and the desired label and returns the reward
             max_duration : maximum number of time step for each trial
@@ -68,8 +72,7 @@ class MnistCorrupted ( py_environment.PyEnvironment ) :
         assert np.all( [ corruption in CORRUPTIONS for corruption in self._selected_corruptions ] ) , "One more more supplied corruption types are invalid."
 
         self._action_spec_dims = np.sum( [ ACTION_SPEC_DIM[ corruption ] for corruption in self._selected_corruptions ] )
-        self._action_spec = array_spec.BoundedArraySpec( shape=( self._action_spec_dims , ) , dtype=np.int32 , minimum=-1 , 
-                                                        maximum=1 , name='action' )
+        self._action_spec = array_spec.BoundedArraySpec( shape=( ) , dtype=np.int32 , minimum= , maximum=1 , name='action' )
         self._observation_spec = array_spec.BoundedArraySpec( shape=( 28 , 28 ) , dtype=np.int32 , 
                                                              minimum=None , maximum=None , name='observation' )
 
@@ -78,7 +81,8 @@ class MnistCorrupted ( py_environment.PyEnvironment ) :
         self._max_duration = max_duration
 
         self._mnist = tfds.load('mnist', split='train', as_supervised=True)
-        self._data_iter = self._mnist.repeat().as_numpy_iterator() #this will create an iterator which iteratres forever
+        self._mnist = self._mnist.shuffle( 100 , reshuffle_each_iteration=True ).repeat()
+        self._data_iter = self._mnist.as_numpy_iterator() #this will create an iterator which iteratres forever
 
         self._state_img_orig = None
         self._state_img_label = None
@@ -111,8 +115,10 @@ class MnistCorrupted ( py_environment.PyEnvironment ) :
     #             else :
     #                 cumulative_action_state += [ self._state_cumulative_actions[ action_name ] ]
     #     return cumulative_action_state
-    
+
     def unpack_actions( self , action_vector ) :
+
+        #TODO: check that the action vector matches the action spec
 
         idx = 0
         unpacked_action = {}
@@ -170,6 +176,8 @@ class MnistCorrupted ( py_environment.PyEnvironment ) :
     def reward_function( self , observed_image ) :
         """
         Reward function for the environment.
+        TOOD: 
+            Add a penalty for each action taken.
         Args:
             observed_image: The image that the agent has observed.
         Returns:
