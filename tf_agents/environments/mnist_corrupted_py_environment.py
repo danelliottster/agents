@@ -14,18 +14,6 @@ from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step as ts
 
 
-def translate( img_in , translation ) :
-    """
-    Translate the image by the given translation vector.
-    Converts the translation to integers and uses numpy.roll to translate the image.
-    Args:
-        img_in : the image to translate
-        translation : the translation vector as a 1-D numpy array
-    Returns:
-        the translated image
-    """
-    shift = translation.astype( np.int32 )
-    return np.roll( img_in , shift=shift , axis=(0,1) )
 
 def create_empty_cumulative_actions() :
     """
